@@ -14,7 +14,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	let onWillSaveDisposable = vscode.workspace.onWillSaveTextDocument(saveEvent => {
 		const fileName = saveEvent.document.fileName;
-		checkout(fileName);
+		saveEvent.waitUntil(checkout(fileName));
 	});
 
 	context.subscriptions.push(commandDisposable, onWillSaveDisposable);
@@ -22,12 +22,11 @@ export function activate(context: vscode.ExtensionContext) {
 
 function checkout(fileName: string) {
 	const configuration = vscode.workspace.getConfiguration('vscode-tfvc');
-	const defTfPath = 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/CommonExtensions/Microsoft/TeamFoundation/Team Explorer/tf.exe';
-	const tfPath = configuration.get<string>('tfExePath') || defTfPath;
+	const tfPath = configuration.get<string>('tfExePath');
 	// todo: check if exist and if not ask
-	if (tfPath === undefined || tfPath.length === 0) { }
+	if (tfPath === undefined || tfPath.length === 0) { return Promise.reject(); }
 
-	vscode.window.withProgress(
+	return vscode.window.withProgress(
 		{ title: `Checking out ${fileName}...`, location: vscode.ProgressLocation.Notification },
 		progress => new Promise((resolve, reject) => {
 			const childProcess = process.execFile(tfPath, ['vc', 'checkout', fileName]);

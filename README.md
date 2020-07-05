@@ -1,4 +1,4 @@
-# vscode-tfvc README
+# VS Code TFVC extension
 
 Provide support in TFVC (Team Foundation Version Control) to Visual Studio Code.
 

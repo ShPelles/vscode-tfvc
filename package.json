@@ -1,16 +1,18 @@
 {
 	"name": "vscode-tfvc",
-	"displayName": "VS Code - TFVC",
-	"description": "",
+	"displayName": "TFVC for VS Code",
+	"description": "Provide support in TFVC (Team Foundation Version Control) to Visual Studio Code",
 	"version": "0.1.0",
+	"publisher": "ShPelles",
+	"repository": "https://github.com/ShPelles/vscode-tfvc",
 	"engines": {
-		"vscode": "^1.46.0"
+		"vscode": "^1.45.0"
 	},
 	"categories": [
 		"SCM Providers"
 	],
 	"activationEvents": [
-		"onStartupFinished"
+		"*"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -42,7 +44,7 @@
 		"test": "node ./out/test/runTest.js"
 	},
 	"devDependencies": {
-		"@types/vscode": "^1.46.0",
+		"@types/vscode": "^1.45.0",
 		"@types/glob": "^7.1.1",
 		"@types/mocha": "^7.0.2",
 		"@types/node": "^13.11.0",
