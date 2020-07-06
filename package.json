@@ -19,7 +19,17 @@
 		"commands": [
 			{
 				"command": "vscode-tfvc.checkoutCurrentFile",
-				"title": "Check out current file",
+				"title": "TFVC: Check out the current file",
+				"enablement": "editorFocus"
+			},
+			{
+				"command": "vscode-tfvc.checkInCurrentFile",
+				"title": "TFVC: Check in the current file",
+				"enablement": "editorFocus"
+			},
+			{
+				"command": "vscode-tfvc.undoCurrentFile",
+				"title": "TFVC: Cancel the pending changes in the current file",
 				"enablement": "editorFocus"
 			}
 		],
