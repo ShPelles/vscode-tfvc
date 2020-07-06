@@ -29,7 +29,7 @@
 			},
 			{
 				"command": "vscode-tfvc.undoCurrentFile",
-				"title": "TFVC: Cancel the pending changes in the current file",
+				"title": "TFVC: Undo the pending changes in the current file",
 				"enablement": "editorFocus"
 			}
 		],

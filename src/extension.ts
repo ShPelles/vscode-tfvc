@@ -98,7 +98,7 @@ function undo(fileName: string) {
 	if (tfPath === undefined || tfPath.length === 0) { return Promise.reject(); }
 
 	return vscode.window.withProgress(
-		{ title: `Checking in ${fileName}...`, location: vscode.ProgressLocation.Notification },
+		{ title: `Undoing ${fileName}...`, location: vscode.ProgressLocation.Notification },
 		progress => new Promise((resolve, reject) => {
 			const childProcess = process.execFile(tfPath, ['vc', 'undo', fileName]);
 			let error = '';
@@ -106,11 +106,11 @@ function undo(fileName: string) {
 			childProcess.stderr?.on('data', data => error += data.toString());
 			childProcess.on("exit", code => {
 				if (code === 0) {
-					vscode.window.showInformationMessage(`The file has been checked in successfully.`);
+					vscode.window.showInformationMessage(`The undo complete successfully.`);
 					resolve();
 				}
 				else {
-					vscode.window.showErrorMessage(`Error: The check-in failed! (Code: ${code}; Error: ${error})`);
+					vscode.window.showErrorMessage(`Error: The undo failed! (Code: ${code}; Error: ${error})`);
 					reject();
 				}
 			});
