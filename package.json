@@ -19,18 +19,43 @@
 		"commands": [
 			{
 				"command": "vscode-tfvc.checkoutCurrentFile",
-				"title": "TFVC: Check out the current file",
-				"enablement": "editorFocus"
+				"title": "Check out the current file",
+				"category": "TFVC"
 			},
 			{
 				"command": "vscode-tfvc.checkInCurrentFile",
-				"title": "TFVC: Check in the current file",
-				"enablement": "editorFocus"
+				"title": "Check in the current file",
+				"category": "TFVC"
+			},
+			{
+				"command": "vscode-tfvc.checkInFile",
+				"title": "Check in the file",
+				"category": "TFVC",
+				"icon": "$(cloud-upload)"
 			},
 			{
 				"command": "vscode-tfvc.undoCurrentFile",
-				"title": "TFVC: Undo the pending changes in the current file",
-				"enablement": "editorFocus"
+				"title": "Undo the pending changes in the current file",
+				"category": "TFVC",
+				"icon": "$(discard)"
+			},
+			{
+				"command": "vscode-tfvc.undoFile",
+				"title": "Undo the pending changes in the file",
+				"category": "TFVC",
+				"icon": "$(discard)"
+			},
+			{
+				"command": "vscode-tfvc.refreshSCM",
+				"title": "refresh the source control panel",
+				"category": "TFVC",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "vscode-tfvc.openFile",
+				"title": "Open the file",
+				"category": "TFVC",
+				"icon": "$(go-to-file)"
 			}
 		],
 		"configuration": {
@@ -43,6 +68,58 @@
 					"scope": "machine"
 				}
 			}
+		},
+		"menus": {
+			"commandPalette": [
+				{
+					"command": "vscode-tfvc.checkoutCurrentFile",
+					"when": "editorFocus"
+				},
+				{
+					"command": "vscode-tfvc.checkInCurrentFile",
+					"when": "editorFocus"
+				},
+				{
+					"command": "vscode-tfvc.undoCurrentFile",
+					"when": "editorFocus"
+				},
+				{
+					"command": "vscode-tfvc.refreshSCM"
+				},
+				{
+					"command": "vscode-tfvc.checkInFile",
+					"when": "false"
+				},
+				{
+					"command": "vscode-tfvc.undoFile",
+					"when": "false"
+				},
+				{
+					"command": "vscode-tfvc.openFile",
+					"when": "false"
+				}
+			],
+			"scm/title": [
+				{
+					"command": "vscode-tfvc.refreshSCM",
+					"group": "navigation",
+					"when": "scmProvider == tfvc"
+				}
+			],
+			"scm/resourceState/context": [
+				{
+					"command": "vscode-tfvc.openFile",
+					"group": "inline"
+				},
+				{
+					"command": "vscode-tfvc.checkInFile",
+					"group": "inline"
+				},
+				{
+					"command": "vscode-tfvc.undoFile",
+					"group": "inline"
+				}
+			]
 		}
 	},
 	"scripts": {
@@ -54,16 +131,20 @@
 		"test": "node ./out/test/runTest.js"
 	},
 	"devDependencies": {
-		"@types/vscode": "^1.45.0",
 		"@types/glob": "^7.1.1",
 		"@types/mocha": "^7.0.2",
 		"@types/node": "^13.11.0",
-		"eslint": "^6.8.0",
-		"@typescript-eslint/parser": "^2.30.0",
+		"@types/vscode": "^1.45.0",
+		"@types/xmldom": "^0.1.30",
 		"@typescript-eslint/eslint-plugin": "^2.30.0",
+		"@typescript-eslint/parser": "^2.30.0",
+		"eslint": "^6.8.0",
 		"glob": "^7.1.6",
 		"mocha": "^7.1.2",
 		"typescript": "^3.8.3",
 		"vscode-test": "^1.3.0"
+	},
+	"dependencies": {
+		"xmldom": "^0.3.0"
 	}
 }
