@@ -28,7 +28,6 @@ export function activate(context: vscode.ExtensionContext) {
 				return;
 			}
 			checkout(fileName);
-			vscode.commands.executeCommand('vscode-tfvc.refreshSCM');
 		}),
 		vscode.commands.registerCommand('vscode-tfvc.checkInCurrentFile', () => {
 			const fileName = vscode.window.activeTextEditor?.document.fileName;
@@ -37,7 +36,6 @@ export function activate(context: vscode.ExtensionContext) {
 				return;
 			}
 			checkIn(fileName);
-			vscode.commands.executeCommand('vscode-tfvc.refreshSCM');
 		}),
 		vscode.commands.registerCommand('vscode-tfvc.undoCurrentFile', () => {
 			const fileName = vscode.window.activeTextEditor?.document.fileName;
@@ -46,7 +44,6 @@ export function activate(context: vscode.ExtensionContext) {
 				return;
 			}
 			undo(fileName);
-			vscode.commands.executeCommand('vscode-tfvc.refreshSCM');
 		}),
 		vscode.commands.registerCommand('vscode-tfvc.refreshSCM', () => {
 			refreshSCM(scm, changes, decorator);
@@ -123,6 +120,7 @@ function checkout(fileName: string) {
 			childProcess.on("exit", code => {
 				if (code === 0) {
 					vscode.window.showInformationMessage(`The file has been checked out successfully.`);
+					vscode.commands.executeCommand('vscode-tfvc.refreshSCM');
 					resolve();
 				}
 				else {
@@ -150,6 +148,7 @@ function checkIn(fileName: string) {
 			childProcess.on("exit", code => {
 				if (code === 0) {
 					vscode.window.showInformationMessage(`The file has been checked in successfully.`);
+					vscode.commands.executeCommand('vscode-tfvc.refreshSCM');
 					resolve();
 				}
 				else {
@@ -178,6 +177,7 @@ function undo(fileName: string) {
 			childProcess.on("exit", code => {
 				if (code === 0) {
 					vscode.window.showInformationMessage(`The undo complete successfully.`);
+					vscode.commands.executeCommand('vscode-tfvc.refreshSCM');
 					resolve();
 				}
 				else {
