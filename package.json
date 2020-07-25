@@ -66,22 +66,24 @@
 					"default": "",
 					"description": "Full path of 'TF.EXE'.",
 					"scope": "machine"
+				},
+				"vscode-tfvc.autoCheckout": {
+					"type": "boolean",
+					"default": "false",
+					"description": ""
 				}
 			}
 		},
 		"menus": {
 			"commandPalette": [
 				{
-					"command": "vscode-tfvc.checkoutCurrentFile",
-					"when": "editorFocus"
+					"command": "vscode-tfvc.checkoutCurrentFile"
 				},
 				{
-					"command": "vscode-tfvc.checkInCurrentFile",
-					"when": "editorFocus"
+					"command": "vscode-tfvc.checkInCurrentFile"
 				},
 				{
-					"command": "vscode-tfvc.undoCurrentFile",
-					"when": "editorFocus"
+					"command": "vscode-tfvc.undoCurrentFile"
 				},
 				{
 					"command": "vscode-tfvc.refreshSCM"

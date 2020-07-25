@@ -3,6 +3,11 @@
 All notable changes to the "vscode-tfvc" extension will be documented in this file.
 
 ## [Unreleased]
+### Fixed
+- Run `refreshSCM()` after side-bar commands (`Check in` & `Undo`).
+
+### Added
+- `vscode-tfvc.autoCheckout` configuration.
 
 ## [0.3.0] 2020-07-15
 ### Added

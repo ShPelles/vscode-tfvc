@@ -21,24 +21,24 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('vscode-tfvc.checkoutCurrentFile', () => {
-			const fileName = vscode.window.activeTextEditor?.document.fileName;
+		vscode.commands.registerTextEditorCommand('vscode-tfvc.checkoutCurrentFile', editor => {
+			const fileName = editor.document.fileName;
 			if (fileName === undefined) {
 				vscode.window.showWarningMessage(`No file found for checking out!`);
 				return;
 			}
 			checkout(fileName);
 		}),
-		vscode.commands.registerCommand('vscode-tfvc.checkInCurrentFile', () => {
-			const fileName = vscode.window.activeTextEditor?.document.fileName;
+		vscode.commands.registerTextEditorCommand('vscode-tfvc.checkInCurrentFile', editor => {
+			const fileName = editor.document.fileName;
 			if (fileName === undefined) {
 				vscode.window.showWarningMessage(`No file found for checking in!`);
 				return;
 			}
 			checkIn(fileName);
 		}),
-		vscode.commands.registerCommand('vscode-tfvc.undoCurrentFile', () => {
-			const fileName = vscode.window.activeTextEditor?.document.fileName;
+		vscode.commands.registerTextEditorCommand('vscode-tfvc.undoCurrentFile', editor => {
+			const fileName = editor.document.fileName;
 			if (fileName === undefined) {
 				vscode.window.showWarningMessage(`No file found for undo!`);
 				return;
@@ -60,6 +60,10 @@ export function activate(context: vscode.ExtensionContext) {
 		}),
 
 		vscode.workspace.onWillSaveTextDocument(saveEvent => {
+			const configuration = vscode.workspace.getConfiguration('vscode-tfvc');
+			const autoCheckout = configuration.get<boolean>('autoCheckout');
+			if (!autoCheckout) { return; }
+
 			const fileName = saveEvent.document.fileName;
 			saveEvent.waitUntil(checkout(fileName));
 		}),
