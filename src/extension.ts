@@ -16,6 +16,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const rootUri = vscode.workspace.workspaceFolders?.[0]?.uri;
 	const scm = vscode.scm.createSourceControl('tfvc', "TF Version Control", rootUri);
+	scm.inputBox.placeholder = 'Enter a check-in message';
+
 	const changes = scm.createResourceGroup('changes', 'Changes');
 	refreshSCM(scm, changes, decorator);
 
@@ -47,6 +49,13 @@ export function activate(context: vscode.ExtensionContext) {
 		}),
 		vscode.commands.registerCommand('vscode-tfvc.refreshSCM', () => {
 			refreshSCM(scm, changes, decorator);
+		}),
+
+		vscode.commands.registerCommand('vscode-tfvc.undoAll', () => {
+			undoAll(scm);
+		}),
+		vscode.commands.registerCommand('vscode-tfvc.checkInAll', () => {
+			checkInAll(scm);
 		}),
 
 		vscode.commands.registerCommand('vscode-tfvc.undoFile', (state: vscode.SourceControlResourceState) => {
@@ -164,6 +173,36 @@ function checkIn(fileName: string) {
 	);
 }
 
+function checkInAll(scm: vscode.SourceControl) {
+	const configuration = vscode.workspace.getConfiguration('vscode-tfvc');
+	const tfPath = configuration.get<string>('tfExePath');
+	// todo: check if exist and if not ask
+	if (tfPath === undefined || tfPath.length === 0) { return Promise.reject(); }
+
+	return vscode.window.withProgress(
+		{ title: `Checking in all of the changes...`, location: vscode.ProgressLocation.Notification },
+		progress => new Promise((resolve, reject) => {
+			const comment = scm.inputBox.value;
+			const commentArgs = comment ? ['/comment', `"${comment}"`] : [];
+
+			const childProcess = process.execFile(tfPath, ['vc', 'checkin', scm.rootUri?.fsPath ?? '', '/recursive', ...commentArgs]);
+			let error = '';
+			childProcess.stdout?.on('data', message => progress.report({ message }));
+			childProcess.stderr?.on('data', data => error += data.toString());
+			childProcess.on("exit", code => {
+				if (code === 0) {
+					vscode.window.showInformationMessage(`The files have been checked in successfully.`);
+					vscode.commands.executeCommand('vscode-tfvc.refreshSCM');
+					resolve();
+				}
+				else {
+					vscode.window.showErrorMessage(`Error: The check-in failed! (Code: ${code}; Error: ${error})`);
+					reject();
+				}
+			});
+		})
+	);
+}
 
 function undo(fileName: string) {
 	const configuration = vscode.workspace.getConfiguration('vscode-tfvc');
@@ -175,6 +214,34 @@ function undo(fileName: string) {
 		{ title: `Undoing ${fileName}...`, location: vscode.ProgressLocation.Notification },
 		progress => new Promise((resolve, reject) => {
 			const childProcess = process.execFile(tfPath, ['vc', 'undo', fileName]);
+			let error = '';
+			childProcess.stdout?.on('data', message => progress.report({ message }));
+			childProcess.stderr?.on('data', data => error += data.toString());
+			childProcess.on("exit", code => {
+				if (code === 0) {
+					vscode.window.showInformationMessage(`The undo complete successfully.`);
+					vscode.commands.executeCommand('vscode-tfvc.refreshSCM');
+					resolve();
+				}
+				else {
+					vscode.window.showErrorMessage(`Error: The undo failed! (Code: ${code}; Error: ${error})`);
+					reject();
+				}
+			});
+		})
+	);
+}
+
+function undoAll(scm: vscode.SourceControl) {
+	const configuration = vscode.workspace.getConfiguration('vscode-tfvc');
+	const tfPath = configuration.get<string>('tfExePath');
+	// todo: check if exist and if not ask
+	if (tfPath === undefined || tfPath.length === 0) { return Promise.reject(); }
+
+	return vscode.window.withProgress(
+		{ title: `Undoing all of the changes...`, location: vscode.ProgressLocation.Notification },
+		progress => new Promise((resolve, reject) => {
+			const childProcess = process.execFile(tfPath, ['vc', 'undo', scm.rootUri?.fsPath ?? '', '/recursive']);
 			let error = '';
 			childProcess.stdout?.on('data', message => progress.report({ message }));
 			childProcess.stderr?.on('data', data => error += data.toString());

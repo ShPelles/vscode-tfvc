@@ -34,6 +34,12 @@
 				"icon": "$(cloud-upload)"
 			},
 			{
+				"command": "vscode-tfvc.checkInAll",
+				"title": "Check in all of the checked out files in the workspace",
+				"category": "TFVC",
+				"icon": "$(cloud-upload)"
+			},
+			{
 				"command": "vscode-tfvc.undoCurrentFile",
 				"title": "Undo the pending changes in the current file",
 				"category": "TFVC",
@@ -42,6 +48,12 @@
 			{
 				"command": "vscode-tfvc.undoFile",
 				"title": "Undo the pending changes in the file",
+				"category": "TFVC",
+				"icon": "$(discard)"
+			},
+			{
+				"command": "vscode-tfvc.undoAll",
+				"title": "Undo the all of the pending changes in the workspace",
 				"category": "TFVC",
 				"icon": "$(discard)"
 			},
@@ -89,6 +101,12 @@
 					"command": "vscode-tfvc.refreshSCM"
 				},
 				{
+					"command": "vscode-tfvc.checkInAll"
+				},
+				{
+					"command": "vscode-tfvc.undoAll"
+				},
+				{
 					"command": "vscode-tfvc.checkInFile",
 					"when": "false"
 				},
@@ -104,6 +122,16 @@
 			"scm/title": [
 				{
 					"command": "vscode-tfvc.refreshSCM",
+					"group": "navigation",
+					"when": "scmProvider == tfvc"
+				},
+				{
+					"command": "vscode-tfvc.checkInAll",
+					"group": "navigation",
+					"when": "scmProvider == tfvc"
+				},
+				{
+					"command": "vscode-tfvc.undoAll",
 					"group": "navigation",
 					"when": "scmProvider == tfvc"
 				}

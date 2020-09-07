@@ -5,9 +5,8 @@ Provide support in TFVC (Team Foundation Version Control) to Visual Studio Code.
 ## Features
 
 - Checkout files, Automatic (on save) or manually.
-- See the changed files in the SCM side bar.
-- Check in files.
-- Undo the pending changes in a file.
+- See the changed files in the SCM sidebar.
+- Check in or Undo the pending changes in an individual file or in all the files.
 
 ## Requirements
 

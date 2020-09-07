@@ -3,15 +3,16 @@
 All notable changes to the "vscode-tfvc" extension will be documented in this file.
 
 ## [Unreleased]
-### Fixed
-- Run `refreshSCM()` after side-bar commands (`Check in` & `Undo`).
-
 ### Added
+- `checkInAll` & `undoAll` commands in the SCM sidebar & the Command Palette.
 - `vscode-tfvc.autoCheckout` configuration.
+
+### Fixed
+- Refresh the SCM sidebar after the side-bar commands (`Check in` & `Undo`) are called.
 
 ## [0.3.0] 2020-07-15
 ### Added
-- Basic `SCM Side Bar`. Include:
+- Basic `SCM sidebar`. Include:
   - Display the changed files and their status (`Added`, `Deleted`, `Edited` or `Renamed`).
   - Allow to check-in, undo & open files.
   - Manual refresh (via `refreshSCM`) and auto refresh on changes and after TFVC commands.
