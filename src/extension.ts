@@ -4,22 +4,24 @@ import { DOMParser } from 'xmldom';
 
 import { Decorator } from './decoration';
 
+let scm: vscode.SourceControl;
+
 export function activate(context: vscode.ExtensionContext) {
 
 	if (vscode.workspace.workspaceFolders === undefined) { return; }
 	if (vscode.workspace.workspaceFolders.length > 1) {
-		vscode.window.showWarningMessage(`TFSC Extension don't works with multy-root workspace!`);
+		vscode.window.showWarningMessage(`TFVC Extension don't works with multi-root workspace!`);
 		return;
 	}
 
 	const decorator = new Decorator(context);
 
 	const rootUri = vscode.workspace.workspaceFolders?.[0]?.uri;
-	const scm = vscode.scm.createSourceControl('tfvc', "TF Version Control", rootUri);
+	scm = vscode.scm.createSourceControl('tfvc', "TF Version Control", rootUri);
 	scm.inputBox.placeholder = 'Enter a check-in message';
 
 	const changes = scm.createResourceGroup('changes', 'Changes');
-	refreshSCM(scm, changes, decorator);
+	refreshSCM(changes, decorator);
 
 
 	context.subscriptions.push(
@@ -48,14 +50,14 @@ export function activate(context: vscode.ExtensionContext) {
 			undo(fileName);
 		}),
 		vscode.commands.registerCommand('vscode-tfvc.refreshSCM', () => {
-			refreshSCM(scm, changes, decorator);
+			refreshSCM(changes, decorator);
 		}),
 
 		vscode.commands.registerCommand('vscode-tfvc.undoAll', () => {
-			undoAll(scm);
+			undoAll();
 		}),
 		vscode.commands.registerCommand('vscode-tfvc.checkInAll', () => {
-			checkInAll(scm);
+			checkInAll();
 		}),
 
 		vscode.commands.registerCommand('vscode-tfvc.undoFile', (state: vscode.SourceControlResourceState) => {
@@ -84,180 +86,149 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 }
 
-function refreshSCM(scm: vscode.SourceControl, group: vscode.SourceControlResourceGroup, decorator: Decorator) {
-	const configuration = vscode.workspace.getConfiguration('vscode-tfvc');
-	const tfPath = configuration.get<string>('tfExePath');
-	// todo: check if exist and if not ask
-	if (tfPath === undefined || tfPath.length === 0) { return Promise.reject(); }
+function refreshSCM(group: vscode.SourceControlResourceGroup, decorator: Decorator) {
+	const progressOptions: vscode.ProgressOptions = {
+		title: `Refreshing the source control...`,
+		location: vscode.ProgressLocation.SourceControl,
+	};
+	const params = ['vc', 'status', getRootUri(), '/recursive', '/format:xml'];
 
-	return vscode.window.withProgress(
-		{ title: `Refreshing the source control...`, location: vscode.ProgressLocation.SourceControl },
-		_progress => new Promise((resolve, reject) => {
-			const childProcess = process.execFile(tfPath, ['vc', 'status', scm.rootUri?.fsPath ?? '', '/recursive', '/format:xml']);
-			let message = '', error = '';
-			childProcess.stdout?.on('data', data => message += data.toString());
-			childProcess.stderr?.on('data', data => error += data.toString());
-			childProcess.on("exit", code => {
-				if (code === 0) {
-					const parser = new DOMParser();
-					const xmlDoc = parser.parseFromString(message, "text/xml");
-					const elements = Array.from(xmlDoc.getElementsByTagName('PendingChange'));
-					group.resourceStates = elements.map(el => ({
-						resourceUri: vscode.Uri.file(el.getAttribute('local')!),
-						decorations: decorator.getDecorations(el.getAttribute('chg') ?? ''),
-					}));
-					resolve();
-				}
-				else {
-					vscode.window.showErrorMessage(`Error: Cannot check the source control! (Code: ${code}; Error: ${error})`);
-					reject();
-				}
-			});
-		})
-	);
+	return vscode.window.withProgress(progressOptions, execTf(params, false)).then(xml => {
+		const parser = new DOMParser();
+		const xmlDoc = parser.parseFromString(xml as string, "text/xml");
+		const elements = Array.from(xmlDoc.getElementsByTagName('PendingChange'));
+		group.resourceStates = elements.map(el => ({
+			resourceUri: vscode.Uri.file(el.getAttribute('local')!),
+			decorations: decorator.getDecorations(el.getAttribute('chg') ?? ''),
+		}));
+		// vscode.window.showInformationMessage(`The source control has been refreshed successfully.`);
+	}, (error: { code: number, message: string }) => {
+		vscode.window.showErrorMessage(`Error: Cannot check the source control! (Code: ${error.code}; Error: ${error.message})`);
+	});
 }
 
 function checkout(fileName: string) {
-	const configuration = vscode.workspace.getConfiguration('vscode-tfvc');
-	const tfPath = configuration.get<string>('tfExePath');
-	// todo: check if exist and if not ask
-	if (tfPath === undefined || tfPath.length === 0) { return Promise.reject(); }
+	const progressOptions: vscode.ProgressOptions = {
+		title: `Checking out ${fileName}...`,
+		location: vscode.ProgressLocation.Notification,
+	};
+	const params = ['vc', 'checkout', fileName];
 
-	return vscode.window.withProgress(
-		{ title: `Checking out ${fileName}...`, location: vscode.ProgressLocation.Notification },
-		progress => new Promise((resolve, reject) => {
-			const childProcess = process.execFile(tfPath, ['vc', 'checkout', fileName]);
-			let error = '';
-			childProcess.stdout?.on('data', message => progress.report({ message }));
-			childProcess.stderr?.on('data', data => error += data.toString());
-			childProcess.on("exit", code => {
-				if (code === 0) {
-					vscode.window.showInformationMessage(`The file has been checked out successfully.`);
-					vscode.commands.executeCommand('vscode-tfvc.refreshSCM');
-					resolve();
-				}
-				else {
-					vscode.window.showErrorMessage(`Error: The checkout failed! (Code: ${code}; Error: ${error})`);
-					reject();
-				}
-			});
-		})
-	);
+	return vscode.window.withProgress(progressOptions, execTf(params)).then(() => {
+		vscode.window.showInformationMessage(`The file has been checked out successfully.`);
+		vscode.commands.executeCommand('vscode-tfvc.refreshSCM');
+	}, (error: { code: number, message: string }) => {
+		vscode.window.showErrorMessage(`Error: The checkout failed! (Code: ${error.code}; Error: ${error.message})`);
+	});
 }
 
 function checkIn(fileName: string) {
-	const configuration = vscode.workspace.getConfiguration('vscode-tfvc');
-	const tfPath = configuration.get<string>('tfExePath');
-	// todo: check if exist and if not ask
-	if (tfPath === undefined || tfPath.length === 0) { return Promise.reject(); }
+	const progressOptions: vscode.ProgressOptions = {
+		title: `Checking in ${fileName}...`,
+		location: vscode.ProgressLocation.Notification,
+	};
+	const params = ['vc', 'checkin', fileName];
 
-	return vscode.window.withProgress(
-		{ title: `Checking in ${fileName}...`, location: vscode.ProgressLocation.Notification },
-		progress => new Promise((resolve, reject) => {
-			const childProcess = process.execFile(tfPath, ['vc', 'checkin', fileName]);
-			let error = '';
-			childProcess.stdout?.on('data', message => progress.report({ message }));
-			childProcess.stderr?.on('data', data => error += data.toString());
-			childProcess.on("exit", code => {
-				if (code === 0) {
-					vscode.window.showInformationMessage(`The file has been checked in successfully.`);
-					vscode.commands.executeCommand('vscode-tfvc.refreshSCM');
-					resolve();
-				}
-				else {
-					vscode.window.showErrorMessage(`Error: The check-in failed! (Code: ${code}; Error: ${error})`);
-					reject();
-				}
-			});
-		})
-	);
+	return vscode.window.withProgress(progressOptions, execTf(params)).then(() => {
+		vscode.window.showInformationMessage(`The file has been checked in successfully.`);
+		vscode.commands.executeCommand('vscode-tfvc.refreshSCM');
+	}, (error: { code: number, message: string }) => {
+		vscode.window.showErrorMessage(`Error: The check-in failed! (Code: ${error.code}; Error: ${error.message})`);
+	});
 }
 
-function checkInAll(scm: vscode.SourceControl) {
+function getConfiguration(): { tfPath: string } {
 	const configuration = vscode.workspace.getConfiguration('vscode-tfvc');
 	const tfPath = configuration.get<string>('tfExePath');
-	// todo: check if exist and if not ask
-	if (tfPath === undefined || tfPath.length === 0) { return Promise.reject(); }
 
-	return vscode.window.withProgress(
-		{ title: `Checking in all of the changes...`, location: vscode.ProgressLocation.Notification },
-		progress => new Promise((resolve, reject) => {
-			const comment = scm.inputBox.value;
-			const commentArgs = comment ? ['/comment', `"${comment}"`] : [];
+	// TODO: if path not exist ask
+	if (tfPath === undefined || tfPath.length === 0) { throw new Error(`The path of TF.exe path is not configured.`); }
 
-			const childProcess = process.execFile(tfPath, ['vc', 'checkin', scm.rootUri?.fsPath ?? '', '/recursive', ...commentArgs]);
-			let error = '';
-			childProcess.stdout?.on('data', message => progress.report({ message }));
-			childProcess.stderr?.on('data', data => error += data.toString());
-			childProcess.on("exit", code => {
-				if (code === 0) {
-					vscode.window.showInformationMessage(`The files have been checked in successfully.`);
-					vscode.commands.executeCommand('vscode-tfvc.refreshSCM');
-					resolve();
-				}
-				else {
-					vscode.window.showErrorMessage(`Error: The check-in failed! (Code: ${code}; Error: ${error})`);
-					reject();
-				}
-			});
-		})
-	);
+	return { tfPath };
+}
+
+function execTf(params: string[], showMessages = true): Parameters<typeof vscode.window.withProgress>[1] {
+	const configuration = getConfiguration();
+	const tfPath = configuration.tfPath;
+
+	return progress => new Promise<string>((resolve, reject) => {
+		let message = '';
+		let error = '';
+		const childProcess = process.execFile(tfPath, params);
+		childProcess.stdout?.on('data', data => {
+			if (showMessages) { progress.report(data); }
+			message += data.toString();
+		});
+		childProcess.stderr?.on('data', data => error += data.toString());
+		childProcess.on("exit", code => {
+			if (code === 0) {
+				resolve(message);
+			} else {
+				reject({ code, message: error });
+			}
+		});
+	});
+}
+
+function getRootUri(): string {
+	const rootUri = scm.rootUri?.fsPath;
+	if (rootUri === undefined) {
+		throw new Error('The root path not configured!');
+	}
+	return rootUri;
+}
+
+function checkInAll() {
+	const progressOptions: vscode.ProgressOptions = {
+		title: `Checking in all of the changes...`,
+		location: vscode.ProgressLocation.Notification,
+	};
+
+	return new Promise<string | null>(resolve => {
+		const comment = scm.inputBox.value;
+		if (comment) { resolve(comment); }
+		// TODO: ask for comment
+		resolve(null);
+	}).then(comment => {
+		const commentArgs = comment ? ['/comment', `"${comment}"`] : [];
+		const params = ['vc', 'checkin', getRootUri(), '/recursive', ...commentArgs];
+		return vscode.window.withProgress(progressOptions, execTf(params));
+	}).then(() => {
+		vscode.window.showInformationMessage(`TThe files have been checked in successfully.`);
+		vscode.commands.executeCommand('vscode-tfvc.refreshSCM');
+	}, (error: { code: number, message: string }) => {
+		vscode.window.showErrorMessage(`Error: The check-in failed! (Code: ${error.code}; Error: ${error.message})`);
+	});
 }
 
 function undo(fileName: string) {
-	const configuration = vscode.workspace.getConfiguration('vscode-tfvc');
-	const tfPath = configuration.get<string>('tfExePath');
-	// todo: check if exist and if not ask
-	if (tfPath === undefined || tfPath.length === 0) { return Promise.reject(); }
+	const progressOptions: vscode.ProgressOptions = {
+		title: `Undoing ${fileName}...`,
+		location: vscode.ProgressLocation.Notification,
+	};
+	const params = ['vc', 'undo', fileName];
 
-	return vscode.window.withProgress(
-		{ title: `Undoing ${fileName}...`, location: vscode.ProgressLocation.Notification },
-		progress => new Promise((resolve, reject) => {
-			const childProcess = process.execFile(tfPath, ['vc', 'undo', fileName]);
-			let error = '';
-			childProcess.stdout?.on('data', message => progress.report({ message }));
-			childProcess.stderr?.on('data', data => error += data.toString());
-			childProcess.on("exit", code => {
-				if (code === 0) {
-					vscode.window.showInformationMessage(`The undo complete successfully.`);
-					vscode.commands.executeCommand('vscode-tfvc.refreshSCM');
-					resolve();
-				}
-				else {
-					vscode.window.showErrorMessage(`Error: The undo failed! (Code: ${code}; Error: ${error})`);
-					reject();
-				}
-			});
-		})
-	);
+	return vscode.window.withProgress(progressOptions, execTf(params)).then(() => {
+		vscode.window.showInformationMessage(`The undo complete successfully..`);
+		vscode.commands.executeCommand('vscode-tfvc.refreshSCM');
+	}, (error: { code: number, message: string }) => {
+		vscode.window.showErrorMessage(`Error: The undo failed! (Code: ${error.code}; Error: ${error.message})`);
+	});
 }
 
-function undoAll(scm: vscode.SourceControl) {
-	const configuration = vscode.workspace.getConfiguration('vscode-tfvc');
-	const tfPath = configuration.get<string>('tfExePath');
-	// todo: check if exist and if not ask
-	if (tfPath === undefined || tfPath.length === 0) { return Promise.reject(); }
+function undoAll() {
+	const progressOptions: vscode.ProgressOptions = {
+		title: `Undoing all of the changes...`,
+		location: vscode.ProgressLocation.Notification,
+	};
+	const params = ['vc', 'undo', getRootUri(), '/recursive'];
 
-	return vscode.window.withProgress(
-		{ title: `Undoing all of the changes...`, location: vscode.ProgressLocation.Notification },
-		progress => new Promise((resolve, reject) => {
-			const childProcess = process.execFile(tfPath, ['vc', 'undo', scm.rootUri?.fsPath ?? '', '/recursive']);
-			let error = '';
-			childProcess.stdout?.on('data', message => progress.report({ message }));
-			childProcess.stderr?.on('data', data => error += data.toString());
-			childProcess.on("exit", code => {
-				if (code === 0) {
-					vscode.window.showInformationMessage(`The undo complete successfully.`);
-					vscode.commands.executeCommand('vscode-tfvc.refreshSCM');
-					resolve();
-				}
-				else {
-					vscode.window.showErrorMessage(`Error: The undo failed! (Code: ${code}; Error: ${error})`);
-					reject();
-				}
-			});
-		})
-	);
+	return vscode.window.withProgress(progressOptions, execTf(params)).then(() => {
+		vscode.window.showInformationMessage(`The undo complete successfully.`);
+		vscode.commands.executeCommand('vscode-tfvc.refreshSCM');
+	}, (error: { code: number, message: string }) => {
+		vscode.window.showErrorMessage(`Error: The undo failed! (Code: ${error.code}; Error: ${error.message})`);
+	});
 }
 
 export function deactivate() { }
