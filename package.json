@@ -136,6 +136,16 @@
 					"when": "scmProvider == tfvc"
 				}
 			],
+			"scm/resourceFolder/context": [
+				{
+					"command": "vscode-tfvc.checkInFile",
+					"group": "inline"
+				},
+				{
+					"command": "vscode-tfvc.undoFile",
+					"group": "inline"
+				}
+			],
 			"scm/resourceState/context": [
 				{
 					"command": "vscode-tfvc.openFile",

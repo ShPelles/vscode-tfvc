@@ -60,11 +60,13 @@ export function activate(context: vscode.ExtensionContext) {
 			checkInAll();
 		}),
 
-		vscode.commands.registerCommand('vscode-tfvc.undoFile', (state: vscode.SourceControlResourceState) => {
-			undo(state.resourceUri.fsPath);
+		vscode.commands.registerCommand('vscode-tfvc.undoFile', (...states: vscode.SourceControlResourceState[]) => {
+			const paths = states.map(state => state.resourceUri.fsPath);
+			let commonPath = longestCommonPrefix(paths);
+			undo(commonPath);
 		}),
-		vscode.commands.registerCommand('vscode-tfvc.checkInFile', (state: vscode.SourceControlResourceState) => {
-			checkIn(state.resourceUri.fsPath);
+		vscode.commands.registerCommand('vscode-tfvc.checkInFile', (...state: vscode.SourceControlResourceState[]) => {
+			checkIn(state[0].resourceUri.fsPath);
 		}),
 		vscode.commands.registerCommand('vscode-tfvc.openFile', (state: vscode.SourceControlResourceState) => {
 			vscode.commands.executeCommand('vscode.open', state.resourceUri);
@@ -122,12 +124,12 @@ function checkout(fileName: string) {
 	});
 }
 
-function checkIn(fileName: string) {
+function checkIn(path: string) {
 	const progressOptions: vscode.ProgressOptions = {
-		title: `Checking in ${fileName}...`,
+		title: `Checking in ${path}...`,
 		location: vscode.ProgressLocation.Notification,
 	};
-	const params = ['vc', 'checkin', fileName];
+	const params = ['vc', 'checkin', path, '/recursive'];
 
 	return vscode.window.withProgress(progressOptions, execTf(params)).then(() => {
 		vscode.window.showInformationMessage(`The file has been checked in successfully.`);
@@ -206,7 +208,7 @@ function undo(fileName: string) {
 		title: `Undoing ${fileName}...`,
 		location: vscode.ProgressLocation.Notification,
 	};
-	const params = ['vc', 'undo', fileName];
+	const params = ['vc', 'undo', '/recursive', fileName];
 
 	return vscode.window.withProgress(progressOptions, execTf(params)).then(() => {
 		vscode.window.showInformationMessage(`The undo complete successfully..`);
@@ -232,3 +234,18 @@ function undoAll() {
 }
 
 export function deactivate() { }
+
+
+// base on: https://www.linkedin.com/pulse/find-longest-common-prefix-array-strings-javascript-bradshaw/
+function longestCommonPrefix(arr: string[]): string {
+	if (!arr || arr.length === 0) {
+		return '';
+	}
+
+	const sortedArray = arr.sort((a, b) => a.length - b.length);
+	let shortestString = sortedArray[0];
+	while (!arr.every(str => str.startsWith(shortestString))) {
+		shortestString = shortestString.slice(0, -1);
+	}
+	return shortestString;
+}
