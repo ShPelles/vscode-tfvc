@@ -35,4 +35,4 @@ All notable changes to the "vscode-tfvc" extension will be documented in this fi
 ### Added
 - `Check out the current file` command.
 - Automatic checking out on save.
-- `vscode-tfvc.checkoutCurrentFile` configuration.
+- `vscode-tfvc.tfExePath` configuration.
