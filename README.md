@@ -16,7 +16,8 @@ You should have `TF.EXE` (The CLI tool of the Team Foundation Server) in yours c
 
 This extension contributes the following settings:
 
-* `vscode-tfvc.tfExePath`: The full path to the 'TF.EXE' file.
+* `tfvc.tfExePath`: The full path to the 'TF.EXE' file.
+* `tfvc.autoCheckout`: Defines whether the auto-load will work on saving, on editing, or not at all.
 
 ## Known Issues
 

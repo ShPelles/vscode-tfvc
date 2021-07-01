@@ -73,16 +73,21 @@
 		"configuration": {
 			"title": "TFVC",
 			"properties": {
-				"vscode-tfvc.tfExePath": {
+				"tfvc.tfExePath": {
 					"type": "string",
 					"default": "",
 					"description": "Full path of 'TF.EXE'.",
 					"scope": "machine"
 				},
-				"vscode-tfvc.autoCheckout": {
-					"type": "boolean",
-					"default": "false",
-					"description": ""
+				"tfvc.autoCheckout": {
+					"type": "string",
+					"default": "on edit",
+					"enum": ["none", "on edit", "on save"],
+					"enumDescriptions": [
+					  "The extension never tries to checkout automatically",
+					  "The automatic checkout runs when the user tries to edit a document",
+					  "The automatic checkout runs when the user tries to save a document"
+					]
 				}
 			}
 		},

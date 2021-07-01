@@ -5,10 +5,15 @@ All notable changes to the "vscode-tfvc" extension will be documented in this fi
 ## [Unreleased]
 ### Added
 - `checkInAll` & `undoAll` commands in the SCM sidebar & the Command Palette.
-- `vscode-tfvc.autoCheckout` configuration.
+- automatic checking out on edit.
+- `tfvc.autoCheckout` configuration (None, On save, or On edit).
 
 ### Fixed
 - Refresh the SCM sidebar after the side-bar commands (`Check in` & `Undo`) are called.
+
+
+### Changed
+- Rename the `vscode-tfvc.tfExePath` configuration to `tfvc.tfExePath`.
 
 ## [0.3.0] 2020-07-15
 ### Added
