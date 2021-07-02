@@ -2,7 +2,7 @@
 	"name": "vscode-tfvc",
 	"displayName": "TFVC for VS Code",
 	"description": "Provide support in TFVC (Team Foundation Version Control) to Visual Studio Code",
-	"version": "0.3.0",
+	"version": "0.4.0-beta.0",
 	"publisher": "ShPelles",
 	"repository": "https://github.com/ShPelles/vscode-tfvc",
 	"engines": {
@@ -82,11 +82,15 @@
 				"tfvc.autoCheckout": {
 					"type": "string",
 					"default": "on edit",
-					"enum": ["none", "on edit", "on save"],
+					"enum": [
+						"none",
+						"on edit",
+						"on save"
+					],
 					"enumDescriptions": [
-					  "The extension never tries to checkout automatically",
-					  "The automatic checkout runs when the user tries to edit a document",
-					  "The automatic checkout runs when the user tries to save a document"
+						"The extension never tries to checkout automatically",
+						"The automatic checkout runs when the user tries to edit a document",
+						"The automatic checkout runs when the user tries to save a document"
 					]
 				}
 			}
