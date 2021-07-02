@@ -15,6 +15,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const scm = new SCM(context);
 
 	context.subscriptions.push(
+		// TODO: write a shared wrapper for this three commands 
 		vscode.commands.registerTextEditorCommand('vscode-tfvc.checkoutCurrentFile', editor => {
 			const fileName = editor.document.fileName;
 			if (fileName === undefined) {

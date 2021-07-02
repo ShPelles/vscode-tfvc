@@ -75,12 +75,14 @@ export class SCM {
         });
     };
 
-    checkIn = (filePath?: string | string[]) => {
-        // TODO: confirm
+    checkIn = async (filePath?: string | string[]) => {
+        const title = `checking in ${this.createTitleSuffix(filePath)}`;
+        if (!await this.confirmAction(title)) { return; }
+
         // TODO: get comment & ask if not exist
         const params = ['vc', 'checkin', '/recursive', ...this.createUrisArray(filePath)];
         const progressOptions: vscode.ProgressOptions = {
-            title: `Checking in ${this.createTitleSuffix(filePath)}...`,
+            title: `${title.slice(0,1).toUpperCase()}${title.slice(1)}...`,
             location: vscode.ProgressLocation.Notification,
         };
 
@@ -96,11 +98,13 @@ export class SCM {
         });
     };
 
-    undo = (filePath?: string | string[]) => {
-        // TODO: confirm
+    undo = async (filePath?: string | string[]) => {
+        const title = `undoing ${this.createTitleSuffix(filePath)}`;
+        if (!await this.confirmAction(title)) { return; }
+
         const params = ['vc', 'undo', '/recursive', ...this.createUrisArray(filePath)];
         const progressOptions: vscode.ProgressOptions = {
-            title: `Undoing ${this.createTitleSuffix(filePath)}...`,
+            title: `${title.slice(0,1).toUpperCase()}${title.slice(1)}...`,
             location: vscode.ProgressLocation.Notification,
         };
 
@@ -131,7 +135,6 @@ export class SCM {
     };
 
     private createTitleSuffix = (filePath: string | string[] | undefined): string => {
-        // isWorkspace ? : ${filePath.length === 1 ? 'file' : 'files'}`;
         if (filePath === undefined) { return 'the entire workspace'; }
         if (Array.isArray(filePath) && filePath.length > 1) { return `${filePath.length} files`; }
         if (Array.isArray(filePath)) { return `"${filePath[0]}"`; }
@@ -141,4 +144,14 @@ export class SCM {
     private isCheckedOut = (filePath: string) => {
         return this.changesGroup.resourceStates.some(state => state.resourceUri.fsPath.toLowerCase() === filePath.toLowerCase());
     };
+
+    private async confirmAction(action: string) {
+        const message = `You are going to ${action}. Are you sure?`;
+        const options: vscode.MessageOptions = { modal: true };
+        const yesOption: vscode.MessageItem = { title: 'Yes', isCloseAffordance: false };
+        const noOption: vscode.MessageItem = { title: 'No', isCloseAffordance: true };
+        const selectedOption = await vscode.window.showInformationMessage(message, options, yesOption, noOption);
+        const confirmed = selectedOption === yesOption;
+        return confirmed;
+    }
 }
